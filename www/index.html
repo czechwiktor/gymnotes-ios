@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GymNotes - Dziennik Treningowy</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- SEKCJA: NAGŁÓWEK -->
+  <header>
+    <h1>GymNotes</h1>
+    <span id="header-stats" style="font-size: 0.8rem; color: var(--text-muted);">Treningi: 0</span>
+  </header>
+
+  <!-- SEKCJA: ZAKŁADKA 1 - NOTES TRENINGOWY -->
+  <main id="tab-notes" class="tab-content active">
+    
+    <!-- Suwak Trybu Consistence -->
+    <div class="mode-switch-card">
+      <div class="mode-info">
+        <span class="mode-title">
+          Tryb Consistence
+          <span id="mode-status-tag" style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">(Wyłączony)</span>
+        </span>
+        <span class="mode-desc" id="mode-desc-text">Edytujesz pojedynczy trening dla wybranej daty</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="consistence-toggle" onchange="toggleConsistenceMode()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- WIDOK A: POJEDYNCZY DZIEŃ (Suwak OFF) -->
+    <!-- WIDOK A: POJEDYNCZY DZIEŃ (Suwak OFF) -->
+    <div id="single-day-controls">
+      <div class="day-strip-header">
+        <div>
+          <div class="day-strip-title-row">
+            <span id="current-date-label">Dzisiaj</span>
+            <span id="month-streak-badge" class="streak-pill">&#128293; 0</span>
+          </div>
+          <div class="sub-date" id="current-date-iso">2026-11-20</div>
+        </div>
+        <button id="btn-jump-today" class="btn-jump-today" onclick="goToToday()">Dzisiaj</button>
+      </div>
+
+      <div id="day-strip-scroll" class="day-strip-scroll"></div>
+
+      <div id="day-source-badge"></div>
+      <div id="sync-weekday-bar" class="sync-weekday-bar" style="display: none;">
+        <span id="sync-weekday-label">Powtarzaj w każdy piątek</span>
+        <button class="btn-sync-weekday" onclick="applyCurrentWorkoutToWeekday()">&#128260; Ustaw na stałe</button>
+      </div>
+    </div>
+
+    <!-- WIDOK B: KONFIGURATOR HARMONOGRAMU CONSISTENCE (Suwak ON) -->
+    <div id="consistence-controls" class="consistence-panel" style="display: none;">
+      <div style="font-size: 0.82rem; font-weight: 700; color: #93c5fd; margin-bottom: 8px;">
+        Stały harmonogram (synchronizuje się z Tabelą i Kalendarzem):
+      </div>
+      <div class="consistence-row">
+        <select id="consistence-weekday" onchange="renderWorkout()">
+          <option value="1">Poniedziałki</option>
+          <option value="2">Wtorki</option>
+          <option value="3">Środy</option>
+          <option value="4">Czwartki</option>
+          <option value="5">Piątki</option>
+          <option value="6">Soboty</option>
+          <option value="0">Niedziele</option>
+        </select>
+        <select id="consistence-freq" onchange="updateScheduleFrequency()">
+          <option value="1">Co tydzień</option>
+          <option value="2">Co 2 tygodnie</option>
+          <option value="3">Co 3 tygodnie</option>
+        </select>
+      </div>
+      <div class="consistence-row">
+        <input type="text" id="consistence-plan-name" placeholder="Nazwa treningu (np. PUSH, PULL, LEGS)..." oninput="updateScheduleName()" style="background: var(--bg-card); padding: 9px 12px; font-size: 0.9rem;">
+      </div>
+    </div>
+
+    <!-- Dodawanie ćwiczenia -->
+    <div class="add-exercise-box">
+      <div class="input-group">
+        <input type="text" id="exercise-input" placeholder="Wpisz lub wybierz ćwiczenie..." autocomplete="off">
+        <button class="btn-primary" id="add-ex-btn" onclick="addExerciseFromInput()">+ Dodaj</button>
+      </div>
+      <div id="suggestions" class="suggestions-list"></div>
+    </div>
+
+    <div id="workout-container"></div>
+
+    <div class="note-box" id="single-note-box">
+      <label for="day-note">Notatka do tego dnia:</label>
+      <textarea id="day-note" rows="2" placeholder="Np. Dobry trening, zapas energii..." oninput="saveDayNote()"></textarea>
+    </div>
+  </main>
+
+  <!-- SEKCJA: ZAKŁADKA 2 - KALENDARZ -->
+  <section id="tab-calendar" class="tab-content">
+    <div class="calendar-header">
+      <button class="btn-primary" style="padding: 8px 14px;" onclick="changeMonth(-1)">&#8592;</button>
+      <h2 id="calendar-month-title" style="font-size: 1.1rem;">Listopad 2026</h2>
+      <button class="btn-primary" style="padding: 8px 14px;" onclick="changeMonth(1)">&#8594;</button>
+    </div>
+
+    <div class="calendar-grid">
+      <div class="cal-day-name">Pn</div>
+      <div class="cal-day-name">Wt</div>
+      <div class="cal-day-name">Śr</div>
+      <div class="cal-day-name">Cz</div>
+      <div class="cal-day-name">Pt</div>
+      <div class="cal-day-name">Sb</div>
+      <div class="cal-day-name">Nd</div>
+    </div>
+    <div id="calendar-days" class="calendar-grid"></div>
+
+    <div class="cal-legend">
+      <div><span class="legend-dot" style="background: var(--accent);"></span>Zapisany</div>
+      <div><span class="legend-dot" style="border: 1px dashed var(--blue); background: var(--blue-dim);"></span>Plan Consistence</div>
+    </div>
+  </section>
+
+  <!-- SEKCJA: ZAKŁADKA 3 - CIĄGŁA TABELA PROGRESU -->
+  <section id="tab-table" class="tab-content">
+    <div class="table-toolbar">
+      <h2>Arkusz Progresu</h2>
+      <button class="btn-small-outline" onclick="exportCSV()">&#128229; Eksport CSV</button>
+    </div>
+
+    <div id="progress-table-container"></div>
+
+    <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 10px; text-align: center; line-height: 1.4;">
+      Kliknij <strong>nagłówek planu (&#9998;)</strong>, aby edytować stały plan Consistence.<br>
+      Kliknij <strong>wiersz z datą</strong>, aby wpisać wyniki tego dnia.
+    </p>
+  </section>
+
+  <!-- SEKCJA: ZAKŁADKA 4 - BAZA ĆWICZEŃ I KOPIA ZAPASOWA -->
+  <section id="tab-settings" class="tab-content">
+    <div class="card-section">
+      <h3>Kopia zapasowa danych</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+        Pobierz swoje treningi i szablony Consistence do pliku przed aktualizacją aplikacji APK.
+      </p>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" style="flex: 1;" onclick="exportData()">Eksportuj (JSON)</button>
+        <button class="btn-primary" style="flex: 1; background: var(--bg-input); color: var(--text-main);" onclick="document.getElementById('import-file').click()">Importuj</button>
+        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin-bottom: 0;">Twoja baza podpowiedzi ćwiczeń</h3>
+        <button class="btn-small-outline" onclick="restoreDefaultExercises()">Przywróć domyślne</button>
+      </div>
+      <div id="exercise-db-list" class="db-list"></div>
+    </div>
+  </section>
+
+  <!-- SEKCJA: DOLNA NAWIGACJA -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('notes', this)">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></span>
+      <span>Notes</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('calendar', this)">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>
+      <span>Kalendarz</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('table', this)">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M12 20V5M19 20v-9"/></svg></span>
+      <span>Tabela</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('settings', this)">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/></svg></span>
+      <span>Baza</span>
+    </button>
+  </nav>
+
+  <!-- SEKCJA: MODAL SZCZEGÓŁÓW ĆWICZENIA (SYLWETKA + TIPY) -->
+  <div id="exercise-modal" class="modal-overlay" onclick="closeExerciseModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-ex-title">Nazwa ćwiczenia</h3>
+          <span id="modal-ex-part" class="suggestion-tag">Partia</span>
+        </div>
+        <button class="btn-icon-danger" style="font-size: 1.4rem;" onclick="closeExerciseModal()">&#10005;</button>
+      </div>
+
+      <div class="modal-body-grid">
+        <div id="modal-muscle-svg" class="modal-svg-box"></div>
+        <div class="modal-tips-box">
+          <div class="tips-label">&#9889; Wskazówki techniczne:</div>
+          <ul id="modal-ex-tips" class="tips-list"></ul>
+        </div>
+      </div>
+
+      <div class="modal-custom-note">
+        <label for="modal-user-tip">Twoje notatki / ustawienia (np. wysokość siedziska, chwyt):</label>
+        <textarea id="modal-user-tip" rows="2" placeholder="Wpisz własne tipy – zapiszą się na stałe dla tego ćwiczenia..." oninput="saveExerciseUserTip()"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

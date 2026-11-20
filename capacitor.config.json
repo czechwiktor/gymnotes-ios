@@ -1,0 +1,6 @@
+{
+  "appId": "com.gymnotes.app",
+  "appName": "GymNotes",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
