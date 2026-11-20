@@ -1,0 +1,58 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Pobierz kod
+        uses: actions/checkout@v4
+
+      - name: Przygotuj Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Zainstaluj Capacitor i wygeneruj ikony
+        run: |
+          npm install
+          npx cap add ios
+          npx @capacitor/assets generate --ios --iconBackgroundColor '#0B0D0F' --splashBackgroundColor '#0B0D0F'
+          npx cap sync ios
+
+      - name: Zbuduj aplikację iOS
+        run: |
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            TARGET="-workspace ios/App/App.xcworkspace"
+          else
+            TARGET="-project ios/App/App.xcodeproj"
+          fi
+
+          xcodebuild $TARGET \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            build
+
+      - name: Spakuj do pliku .ipa
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -r GymNotes.ipa Payload
+
+      - name: Udostępnij gotowy plik IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: GymNotes-iOS
+          path: GymNotes.ipa
