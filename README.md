@@ -18,4 +18,4 @@ A lightweight, mobile-first application for planning and tracking strength worko
 ## 🚀 Local Setup
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/YOUR-USERNAME/gymnotes-ios.git](https://github.com/YOUR-USERNAME/gymnotes-ios.git)
+   git clone [https://github.com/czechwiktor/gymnotes-ios.git](https://github.com/YOUR-USERNAME/gymnotes-ios.git)
